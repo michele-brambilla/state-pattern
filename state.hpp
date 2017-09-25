@@ -1,6 +1,7 @@
 #include <memory>
 #include <thread>
 #include <chrono>
+#include <iostream>
 
 template <class T> class State {
   using machine_type = T;
@@ -10,6 +11,7 @@ public:
   virtual bool stop(machine_type &machine) { return false; }
   virtual void report(machine_type &machine) { /*todo*/
   }
+  virtual const size_t counted() { return 0; }
 };
 
 template <class T> class Idle;
@@ -27,10 +29,7 @@ public:
   bool stop(machine_type &machine) override { return false; }
   void report(machine_type &machine) override { /*todo*/
   }
-private:
-  void run() {
-    
-  }
+  const size_t counted() override { return 0; }
 
 };
 
@@ -38,7 +37,20 @@ template <class T> class Start : public State<T> {
   using machine_type = T;
 
 public:
-  Start() { executer = std::thread([&]{ counter(); }); }
+  Start() {
+    executer = std::thread([&]{this->counter();});
+  }
+  Start(Start&& other) : countee{other.countee} {
+    other.stop_ = true;
+    other.executer.join();
+    executer = std::thread([&]{this->counter();});
+  };
+  ~Start() {
+    if(executer.joinable()) {
+      stop_=true;
+      executer.join();
+    }
+  }
   bool start(machine_type &machine) override {
     return false; }
   bool stop(machine_type &machine) override {
@@ -49,11 +61,14 @@ public:
   }
   void report(machine_type &machine) override { /*todo*/
   }
-
+  const size_t counted() override {
+    return countee;
+  }
+  
 private:
   void counter() {
     while(!stop_) {
-      std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+      std::this_thread::sleep_for(std::chrono::milliseconds{10});
       ++countee;
     }
   }
@@ -71,4 +86,5 @@ public:
   bool stop(machine_type &machine) override { return false; }
   void report(machine_type &machine) override { /*todo*/
   }
+  const size_t counted() override { return 0; }
 };

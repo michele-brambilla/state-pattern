@@ -11,13 +11,15 @@ public:
   Machine() : current_{new Idle} {}
 
   template <class T = Idle> void set(const T &) {
-    current_ = make_unique<T>(T());
+    current_ -> stop(*this);
+    current_ = std::move(make_unique<T>(T()));
   }
 
   bool start() { return current_->start(*this); }
   bool stop() { return current_->stop(*this); }
   void report() { current_->report(*this); }
-
+  const size_t counted() { return current_->counted(); }
+  
   std::unique_ptr<State> current_;
 };
 
@@ -63,4 +65,17 @@ TEST(state_machine, transition_start_to_stop) {
 
   EXPECT_FALSE(machine.start());
   EXPECT_FALSE(machine.stop());
+}
+
+TEST(state_machine, run_method_in_thread) {
+  Machine machine;
+  std::this_thread::sleep_for(std::chrono::milliseconds{100});
+  EXPECT_TRUE(machine.counted() == 0 );
+  
+  machine.start();
+  std::this_thread::sleep_for(std::chrono::milliseconds{100});
+  EXPECT_GT(machine.counted(), 0 );
+
+  machine.stop();
+  EXPECT_TRUE(machine.counted() == 0 );
 }

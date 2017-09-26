@@ -29,7 +29,6 @@ public:
   bool stop(machine_type &machine) override { return false; }
   void report(machine_type &machine) override { /*todo*/
   }
-  const size_t counted() override { return 0; }
 
 };
 
@@ -86,5 +85,4 @@ public:
   bool stop(machine_type &machine) override { return false; }
   void report(machine_type &machine) override { /*todo*/
   }
-  const size_t counted() override { return 0; }
 };
